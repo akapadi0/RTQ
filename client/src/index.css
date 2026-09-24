@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Wealth IQ brand palette (matches Money Mindset Game — see RTQ Build
+     Spec, 2026-09-24): forest green headlines/buttons, sage highlights,
+     rose accent/CTA, pale mint background, white stacked cards.
+     System font stack, not a Google Fonts CDN import — PlannerXchange
+     treats network fetches baked into the published artifact as undeclared
+     egress, so fonts need to be system/bundled, not CDN-loaded. */
+  --font-sans: -apple-system, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --font-display: -apple-system, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+
+  --background: 86 70% 96%; /* pale mint #F6FCEE */
+  --foreground: 148 38% 13%; /* forest green #152F21 */
+
+  --primary: 148 38% 13%; /* forest green #152F21 */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 148 17% 90%;
+  --secondary-foreground: 148 38% 13%;
+
+  --accent: 340 41% 56%; /* rose #BD6280 */
+  --accent-foreground: 0 0% 100%;
+
+  --sage: 148 17% 58%; /* #81A592, for headline key-phrases / secondary highlights */
+
+  --muted: 148 17% 93%;
+  --muted-foreground: 148 15% 40%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 148 15% 85%;
+  --input: 148 15% 85%;
+  --ring: 148 38% 13%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 148 38% 13%;
+
+  --radius: 1rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .card-elevated {
+    @apply bg-card border border-border shadow-lg shadow-black/5;
+  }
+  .text-sage {
+    color: hsl(var(--sage));
+  }
+}

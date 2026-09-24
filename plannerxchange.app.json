@@ -1,0 +1,29 @@
+{
+  "slug": "wealthiq-rtq-ips",
+  "name": "Risk Tolerance Questionnaire & IPS",
+  "version": "1.0.0",
+  "summary": "A two-part risk tolerance questionnaire that generates a regulator-ready Investment Policy Statement.",
+  "description": "Clients rank life-risk categories and answer questions about their actual behavior during past market downturns. The advisor adds a few capacity inputs, and the app generates a branded, exam-ready Investment Policy Statement matching the firm's existing IPS template.",
+  "priceLabel": "Included",
+  "framework": "react",
+  "appRoot": "client",
+  "distRoot": "dist/public",
+  "workspacePackage": null,
+  "entryPoint": "src/plugin.tsx",
+  "permissions": ["branding.read", "app_data.read", "app_data.write", "email.send"],
+  "configSchemaVersion": 1,
+  "visibility": "private",
+  "dataPortabilityMode": "plannerxchange_portable",
+  "egressDeclarations": [],
+  "dataIngressDeclarations": [
+    {
+      "id": "rtq-response-storage",
+      "source": "other",
+      "target": "px_app_data_upload",
+      "dataClasses": ["app_work_product"],
+      "purpose": "Store the client's name, email, and questionnaire answers, plus the advisor's capacity inputs, as an app-scoped PlannerXchange data record so the two-part flow can be completed across separate sessions and an Investment Policy Statement can be generated from it.",
+      "retention": "Persisted via PlannerXchange's app-data store for this app's installation; not written to any builder-owned database or third-party service."
+    }
+  ],
+  "categories": ["client-engagement", "financial-planning", "compliance"]
+}
