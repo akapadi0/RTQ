@@ -95,7 +95,7 @@ export async function createRtqResponse(input: { clientName: string; clientEmail
 
   const created = await requestJson<AppDataRecord>("/app-data", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       recordType: RECORD_TYPE,
       title: `RTQ — ${input.clientName}`,
@@ -108,9 +108,15 @@ export async function createRtqResponse(input: { clientName: string; clientEmail
   return { ...record, id: created.recordId };
 }
 
+/** Mirrors the PX SDK's `listAppData`/`getAppData` shape — one resolvable GET-collection call. */
+async function listAppDataRecords(recordType: string): Promise<AppDataRecord[]> {
+  const page = await requestJson<ListPage<AppDataRecord>>(`/app-data?recordType=${encodeURIComponent(recordType)}`);
+  return page.items;
+}
+
 async function findRecord(id: string): Promise<AppDataRecord | undefined> {
-  const page = await requestJson<ListPage<AppDataRecord>>(`/app-data?recordType=${RECORD_TYPE}&limit=200`);
-  return page.items.find((r) => r.payload.id === id || r.recordId === id);
+  const items = await listAppDataRecords(RECORD_TYPE);
+  return items.find((r) => r.payload.id === id || r.recordId === id);
 }
 
 export async function getRtqResponse(id: string): Promise<RtqResponse | undefined> {
@@ -135,7 +141,7 @@ async function patchPayload(id: string, patch: Partial<RtqResponse>): Promise<Rt
   const next = { ...record.payload, ...patch };
   await requestJson<AppDataRecord>(`/app-data/${encodeURIComponent(record.recordId)}`, {
     method: "PATCH",
-    headers: { "content-type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ payload: next }),
   });
   return next;
@@ -167,6 +173,6 @@ export async function listRtqResponses(): Promise<RtqResponse[]> {
   if (isPublicDemo(context) || !isShellHosted(context)) {
     return Array.from(mockStore.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
-  const page = await requestJson<ListPage<AppDataRecord>>(`/app-data?recordType=${RECORD_TYPE}&limit=200`);
-  return page.items.map((r) => r.payload).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const items = await listAppDataRecords(RECORD_TYPE);
+  return items.map((r) => r.payload).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
