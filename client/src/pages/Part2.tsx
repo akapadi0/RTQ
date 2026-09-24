@@ -41,6 +41,7 @@ export default function Part2() {
           clientEmail: updated.clientEmail,
           part1: updated.part1!,
           part2: updated.part2!,
+          resultSnapshot: updated.resultSnapshot!,
         });
         navigate(`/results/${id}`);
       } catch (e) {

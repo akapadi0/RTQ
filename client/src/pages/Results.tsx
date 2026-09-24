@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { getRtqResponse, type RtqResponse } from "@/lib/px-data";
-import { totalScore, scoreToTier, categoryLabel, concernLabel } from "@shared/scoring";
+import { categoryLabel, concernLabel } from "@shared/scoring";
 
 // Client-facing — per spec, the two non-scoring flags (predicted-vs-actual
 // gap, near-term cash needs) surface in the advisor-facing report only, not
@@ -19,12 +19,14 @@ export default function Results() {
   if (response === undefined) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
-  if (!response || !response.part1 || !response.part2) {
+  if (!response || !response.part1 || !response.part2 || !response.resultSnapshot) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">We couldn't find this response.</div>;
   }
 
-  const score = totalScore(response.part2);
-  const band = scoreToTier(score);
+  // Uses the snapshot frozen at submission time, not a live recompute — the
+  // score bands are provisional and expected to get recalibrated, and a
+  // client's result shouldn't silently shift after the fact.
+  const { tierLabel, tierDescription } = response.resultSnapshot;
   const [topCategory, secondCategory] = response.part1.categoryRank;
 
   return (
@@ -35,9 +37,9 @@ export default function Results() {
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Your risk profile</p>
               <h1 className="text-3xl mt-1">
-                <span className="text-sage">{band.label}</span>
+                <span className="text-sage">{tierLabel}</span>
               </h1>
-              <p className="text-muted-foreground mt-2 max-w-sm mx-auto">{band.description}</p>
+              <p className="text-muted-foreground mt-2 max-w-sm mx-auto">{tierDescription}</p>
             </div>
           </CardContent>
         </Card>

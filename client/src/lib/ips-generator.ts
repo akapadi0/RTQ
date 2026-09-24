@@ -13,7 +13,7 @@
  */
 import PptxGenJS from "pptxgenjs";
 import type { RtqResponse } from "./px-data";
-import { summarizePart1, totalScore, scoreToTier, scoreCapacity, computeDivergence, predictedActualGap, cashNeedsRollup } from "@shared/scoring";
+import { summarizePart1, scoreCapacity, computeDivergence, predictedActualGap, cashNeedsRollup } from "@shared/scoring";
 import { LIFE_RISK_CATEGORIES } from "@shared/rtq-content";
 
 const NAVY = "1B2A47";
@@ -44,14 +44,17 @@ function contentSlide(pptx: PptxGenJS, title: string, bullets: string[]) {
 const categoryLabel = (id: string) => LIFE_RISK_CATEGORIES.find((c) => c.id === id)?.label ?? id;
 
 export async function generateIps(response: RtqResponse): Promise<void> {
-  if (!response.part1 || !response.part2 || !response.capacityInputs) {
+  if (!response.part1 || !response.part2 || !response.resultSnapshot || !response.capacityInputs) {
     throw new Error("Cannot generate IPS: RTQ is missing Part 1, Part 2, or advisor capacity inputs.");
   }
 
   const pptx = new PptxGenJS();
   const part1 = summarizePart1(response.part1);
-  const score = totalScore(response.part2);
-  const band = scoreToTier(score);
+  // Uses the snapshot frozen at submission time, not a live recompute — see
+  // the note on ResultSnapshot in px-data.ts. The IPS should match what was
+  // actually shown/emailed to the client, even if score bands get
+  // recalibrated later.
+  const { score, tierLabel, tierDescription, allocationNarrative } = response.resultSnapshot;
   const capacity = scoreCapacity(response.capacityInputs);
   const divergence = computeDivergence(capacity.adjustedScore, score);
   const gap = predictedActualGap(response.part2);
@@ -84,7 +87,7 @@ export async function generateIps(response: RtqResponse): Promise<void> {
     capacity.liquidityPenalty > 0
       ? `Adjusted ability score: ${capacity.adjustedScore}/100 (${capacity.tier.label}) — reduced ${capacity.liquidityPenalty} pts for the near-term liquidity needs above.`
       : `Adjusted ability score: ${capacity.adjustedScore}/100 (${capacity.tier.label}) — no adjustment; no near-term liquidity needs flagged.`,
-    `Desire to take risk (RTQ result): ${band.label} — score ${score}/104. ${band.description}`,
+    `Desire to take risk (RTQ result): ${tierLabel} — score ${score}/104. ${tierDescription}`,
     divergence.flagged
       ? `Capacity and desire diverge meaningfully (${divergence.direction === "capacity_exceeds_desire" ? "capacity exceeds desire" : "desire exceeds capacity"}) — flagged for a deeper conversation about markets and time horizon before finalizing allocation.`
       : "Capacity and desire are broadly aligned.",
@@ -102,7 +105,7 @@ export async function generateIps(response: RtqResponse): Promise<void> {
   ]);
 
   contentSlide(pptx, "Asset allocation", [
-    `Based on the above, ${response.clientName} is suited for a "${band.label}" allocation: ${band.allocationNarrative}.`,
+    `Based on the above, ${response.clientName} is suited for a "${tierLabel}" allocation: ${allocationNarrative}.`,
     "[Advisor: translate this band into the firm's model portfolio — kept as a narrative category here, not a fixed %, to preserve flexibility.]",
     "Allocation will be reviewed annually; rebalanced on a 5% strategic drift / 15% tactical band, or ad hoc during severe volatility (per Wealth IQ Investment Philosophy & Process).",
   ]);
@@ -115,7 +118,7 @@ export async function generateIps(response: RtqResponse): Promise<void> {
   contentSlide(pptx, "Methodology & AI-Use Disclosure", [
     "Risk scoring in this IPS is produced by deterministic, rules-based logic — a 7-question point-sum mapped to a fixed set of score bands, with capacity additionally adjusted for near-term liquidity needs. No AI model makes or influences the risk-tolerance or suitability determination at runtime.",
     "AI tooling (Claude) was used only to help build and draft this application's code and document templates — the same 'administrative and drafting support' category described in the firm's AI policy reference materials (see Two Trails AI Tools Data Handling Policy / ADV Disclosure Language templates on file), not to perform investment analysis or suitability determination.",
-    `Capacity: initial ${capacity.initialScore}/100 (${capacity.initialTier.label}) → adjusted ${capacity.adjustedScore}/100 (${capacity.tier.label}). RTQ score: ${score}/104 (${band.label}).`,
+    `Capacity: initial ${capacity.initialScore}/100 (${capacity.initialTier.label}) → adjusted ${capacity.adjustedScore}/100 (${capacity.tier.label}). RTQ score: ${score}/104 (${tierLabel}).`,
     "Score bands are provisional — recalibrate after the first 20–30 real submissions cluster.",
     "[Advisor / compliance: review this section and the firm's own ADV Item 4 / Item 8 language before treating this IPS as exam-ready — do not file without that review.]",
   ]);

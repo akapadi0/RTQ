@@ -12,8 +12,24 @@
 import { getPlannerXchangeContext, isPublicDemo, isShellHosted } from "@/plannerxchange";
 import type { PlannerXchangeApiRequestInit } from "@/plannerxchange";
 import type { Part1Answers, Part2Answers, CapacityInputs } from "@shared/answer-types";
+import { totalScore, scoreToTier } from "@shared/scoring";
 
 export type RtqStatus = "part1_complete" | "submitted" | "ips_ready";
+
+/**
+ * Frozen at the moment of submission — score bands are explicitly provisional
+ * (see shared/scoring.ts) and expected to get recalibrated once real
+ * submissions come in. Without this snapshot, a client's result would
+ * silently change if you retune the bands later; this keeps it matching
+ * what was actually shown/emailed to them at the time.
+ */
+export interface ResultSnapshot {
+  score: number;
+  tierLabel: string;
+  tierDescription: string;
+  allocationNarrative: string;
+  computedAt: string;
+}
 
 export interface RtqResponse {
   id: string;
@@ -22,6 +38,7 @@ export interface RtqResponse {
   status: RtqStatus;
   part1?: Part1Answers;
   part2?: Part2Answers;
+  resultSnapshot?: ResultSnapshot;
   capacityInputs?: CapacityInputs;
   advisorNotes?: string;
   createdAt: string;
@@ -126,7 +143,16 @@ async function patchPayload(id: string, patch: Partial<RtqResponse>): Promise<Rt
 }
 
 export async function submitPart2(id: string, part2: Part2Answers): Promise<RtqResponse> {
-  return patchPayload(id, { part2, status: "submitted", submittedAt: new Date().toISOString() });
+  const score = totalScore(part2);
+  const band = scoreToTier(score);
+  const resultSnapshot: ResultSnapshot = {
+    score,
+    tierLabel: band.label,
+    tierDescription: band.description,
+    allocationNarrative: band.allocationNarrative,
+    computedAt: new Date().toISOString(),
+  };
+  return patchPayload(id, { part2, resultSnapshot, status: "submitted", submittedAt: new Date().toISOString() });
 }
 
 export async function setCapacityInputs(id: string, capacityInputs: CapacityInputs, advisorNotes?: string): Promise<RtqResponse> {

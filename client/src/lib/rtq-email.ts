@@ -1,5 +1,6 @@
 import type { Part1Answers, Part2Answers } from "@shared/answer-types";
-import { totalScore, scoreToTier, categoryLabel, concernLabel, predictedActualGap } from "@shared/scoring";
+import type { ResultSnapshot } from "./px-data";
+import { categoryLabel, concernLabel, predictedActualGap } from "@shared/scoring";
 import { sendPlannerXchangeEmail } from "./px-email";
 
 // The advisor inbox that gets a copy of every RTQ report. This is Aditi's own
@@ -20,12 +21,10 @@ function part1Html(part1: Part1Answers): string {
   `;
 }
 
-function tierHtml(part2: Part2Answers): string {
-  const score = totalScore(part2);
-  const band = scoreToTier(score);
+function tierHtml(snapshot: ResultSnapshot): string {
   return `
     <h3>Risk profile</h3>
-    <p><strong>${band.label}</strong> (score ${score}/104) — ${band.description}</p>
+    <p><strong>${snapshot.tierLabel}</strong> (score ${snapshot.score}/104) — ${snapshot.tierDescription}</p>
   `;
 }
 
@@ -38,14 +37,20 @@ function wrap(clientName: string, bodyHtml: string): string {
   `;
 }
 
-export async function sendRtqReport(opts: { clientName: string; clientEmail: string; part1: Part1Answers; part2: Part2Answers }) {
+export async function sendRtqReport(opts: {
+  clientName: string;
+  clientEmail: string;
+  part1: Part1Answers;
+  part2: Part2Answers;
+  resultSnapshot: ResultSnapshot;
+}) {
   const subject = `Risk Tolerance Questionnaire results — ${opts.clientName}`;
 
   const clientHtml = wrap(
     opts.clientName,
     `
       ${part1Html(opts.part1)}
-      ${tierHtml(opts.part2)}
+      ${tierHtml(opts.resultSnapshot)}
       <p style="color: #667085; font-size: 13px; margin-top: 32px;">
         This is a summary of your questionnaire responses, generated automatically.
         Your advisor will follow up to discuss these results and how they inform your plan.
@@ -64,7 +69,7 @@ export async function sendRtqReport(opts: { clientName: string; clientEmail: str
     opts.clientName,
     `
       ${part1Html(opts.part1)}
-      ${tierHtml(opts.part2)}
+      ${tierHtml(opts.resultSnapshot)}
       ${flagsHtml}
     `
   );
