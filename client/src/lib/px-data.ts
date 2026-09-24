@@ -108,14 +108,21 @@ export async function createRtqResponse(input: { clientName: string; clientEmail
   return { ...record, id: created.recordId };
 }
 
-/** Mirrors the PX SDK's `listAppData`/`getAppData` shape — one resolvable GET-collection call. */
-async function listAppDataRecords(recordType: string): Promise<AppDataRecord[]> {
-  const page = await requestJson<ListPage<AppDataRecord>>(`/app-data?recordType=${encodeURIComponent(recordType)}`);
+/**
+ * Mirrors PlannerXchange's own documented example (app-data-api.md,
+ * findStateRecord) verbatim: recordType inlined as a literal directly in the
+ * request, not passed through a parameter — a recordType passed as a
+ * function argument was flagged as an unresolvable/opaque app-data
+ * operation, even though it always resolved to this same constant.
+ */
+async function listAllRtqRecords(): Promise<AppDataRecord[]> {
+  const query = new URLSearchParams({ recordType: "rtq_response", limit: "100" });
+  const page = await requestJson<ListPage<AppDataRecord>>(`/app-data?${query.toString()}`);
   return page.items;
 }
 
 async function findRecord(id: string): Promise<AppDataRecord | undefined> {
-  const items = await listAppDataRecords(RECORD_TYPE);
+  const items = await listAllRtqRecords();
   return items.find((r) => r.payload.id === id || r.recordId === id);
 }
 
@@ -173,6 +180,6 @@ export async function listRtqResponses(): Promise<RtqResponse[]> {
   if (isPublicDemo(context) || !isShellHosted(context)) {
     return Array.from(mockStore.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
-  const items = await listAppDataRecords(RECORD_TYPE);
+  const items = await listAllRtqRecords();
   return items.map((r) => r.payload).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

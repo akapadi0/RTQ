@@ -3,9 +3,9 @@
   "appRoot": "client",
   "distRoot": "dist/public",
   "workspacePackage": null,
-  "sourceInputDigest": "3f461ae622787824b02e632b0f41db6f7a8784e103498c3abc632067c2c13fe1",
+  "sourceInputDigest": "76b9f9e98f8ccfb86a0b715eaee7ad5173de306434f53e44b50b4e77061ca853",
   "sourceInputFileCount": 34,
-  "sourceInputTotalBytes": 252146,
+  "sourceInputTotalBytes": 252423,
   "buildCommand": "npm run build",
   "packageManager": "npm",
   "nodeVersion": "v22.12.0",
@@ -14,7 +14,7 @@
     "source": "dist/public/plannerxchange.build-provenance.json",
     "name": "plannerxchange-template-vite-plugin"
   },
-  "aggregateArtifactDigest": "08b72669eb3bf930d6a63c1d5b9a23eeb6f58633bdb27771ad085fd21ebe1f9d",
+  "aggregateArtifactDigest": "a22671adfd280c3e2797275efa5392d78a5c41497f0991b5246058a8f3df4cd3",
   "dependencyLockfileDigests": [
     {
       "path": "package-lock.json",
@@ -25,7 +25,7 @@
   "files": [
     {
       "path": "dist/public/.vite/manifest.json",
-      "sha256": "2fa4558cdfd9043d8f90e2ab9945e347c5793358254697cce4c0b1396dc46fc5",
+      "sha256": "c0d753b276aa4f6c1000be749abc8470e87225a004cba39b6f861dc1887a6775",
       "sizeBytes": 342
     },
     {
@@ -34,9 +34,9 @@
       "sizeBytes": 16043
     },
     {
-      "path": "dist/public/assets/plugin-CnAoArIn.js",
-      "sha256": "28ea882b309c80fbb73e929c1cf4620d2a8191ddacf121fc6830c4f67f0c038d",
-      "sizeBytes": 43287
+      "path": "dist/public/assets/plugin-Dl0QszhH.js",
+      "sha256": "fa4925579de5444e62a5c99d225f1a4c31e21fe4c25ddaed443ad079ee5cd706",
+      "sizeBytes": 43325
     },
     {
       "path": "dist/public/assets/vendor-DTvHbx1D.js",
@@ -45,7 +45,7 @@
     },
     {
       "path": "dist/public/plannerxchange.publish.json",
-      "sha256": "3600f4e0250832ed314b6805fb17146f5a8f8b2e29f9f45d062300eb3aa8fc89",
+      "sha256": "cfe9665a8558009b779aa3a47847463bb81f331b51631fd0dafd9754fbccb4ca",
       "sizeBytes": 262
     }
   ]
