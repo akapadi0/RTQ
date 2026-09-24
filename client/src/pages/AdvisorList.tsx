@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { listRtqResponses, type RtqResponse } from "@/lib/px-data";
 
 const STATUS_LABEL: Record<RtqResponse["status"], string> = {
+  started: "Started — waiting on Part 1",
   part1_complete: "Part 1 only — waiting on client",
   submitted: "Submitted — needs your capacity inputs",
   ips_ready: "Ready — IPS can be downloaded",

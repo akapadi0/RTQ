@@ -1,0 +1,18 @@
+{
+  "_vendor-DTvHbx1D.js": {
+    "file": "assets/vendor-DTvHbx1D.js",
+    "name": "vendor"
+  },
+  "src/plugin.tsx": {
+    "file": "assets/plugin-DogV3X7b.js",
+    "name": "plugin",
+    "src": "src/plugin.tsx",
+    "isEntry": true,
+    "imports": [
+      "_vendor-DTvHbx1D.js"
+    ],
+    "css": [
+      "assets/plugin-BgM7XKAA.css"
+    ]
+  }
+}

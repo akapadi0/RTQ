@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "build_provenance_v1",
+  "appRoot": "client",
+  "distRoot": "dist/public",
+  "workspacePackage": null,
+  "sourceInputDigest": "69aaf9b2d548a923982734e00cc8f95d1157b0a8bb765afd7ba291e94f01daaa",
+  "sourceInputFileCount": 34,
+  "sourceInputTotalBytes": 251938,
+  "buildCommand": "npm run build",
+  "packageManager": "npm",
+  "nodeVersion": "v22.12.0",
+  "builder": {
+    "type": "committed_dist_attestation",
+    "source": "dist/public/plannerxchange.build-provenance.json",
+    "name": "plannerxchange-template-vite-plugin"
+  },
+  "aggregateArtifactDigest": "b0b268556dc6b492026f1f30f876fcb4a0497b8329d8624f550df543c4c4d525",
+  "dependencyLockfileDigests": [
+    {
+      "path": "package-lock.json",
+      "sha256": "ac3ca81dab0b6ec202c1af627cd241439fe7aab70609f5316689076985a92014",
+      "sizeBytes": 136858
+    }
+  ],
+  "files": [
+    {
+      "path": "dist/public/.vite/manifest.json",
+      "sha256": "a2ecc3a7e2454b69493147d1ba28a7d37e38682eba45718e9684ced00b2121a4",
+      "sizeBytes": 342
+    },
+    {
+      "path": "dist/public/assets/plugin-BgM7XKAA.css",
+      "sha256": "ae85d07ab5a2412461f678c0179ef4e60789bd74374bedecb2c09041ba67fad9",
+      "sizeBytes": 16043
+    },
+    {
+      "path": "dist/public/assets/plugin-DogV3X7b.js",
+      "sha256": "93f67e4cdd4d04a8c92b2b6759de13184188064d0630865b8067ea940b1c548d",
+      "sizeBytes": 43278
+    },
+    {
+      "path": "dist/public/assets/vendor-DTvHbx1D.js",
+      "sha256": "a988384b64a9d935e72f8175145fe69f3320bdd7ade977f79a72340a98b441ac",
+      "sizeBytes": 679440
+    },
+    {
+      "path": "dist/public/plannerxchange.publish.json",
+      "sha256": "e3f75efe3387a1cb9e2874c3dd602188e6726b5c62c7d4b40f15880184522d42",
+      "sizeBytes": 262
+    }
+  ]
+}

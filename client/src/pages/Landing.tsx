@@ -6,16 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
+import { createRtqResponse } from "@/lib/px-data";
 
 export default function Landing() {
   const [, navigate] = useLocation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function start() {
-    sessionStorage.setItem("rtq_client_name", name);
-    sessionStorage.setItem("rtq_client_email", email);
-    navigate("/part1");
+  async function start() {
+    setStarting(true);
+    setError(null);
+    try {
+      const created = await createRtqResponse({ clientName: name, clientEmail: email });
+      navigate(`/part1/${created.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setStarting(false);
+    }
   }
 
   return (
@@ -47,9 +56,10 @@ export default function Landing() {
               </div>
             </div>
 
-            <Button size="lg" className="w-full gap-2" disabled={!name || !email} onClick={start}>
-              Start Part 1
-              <ArrowRight className="h-4 w-4" />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button size="lg" className="w-full gap-2" disabled={!name || !email || starting} onClick={start}>
+              {starting ? "Starting..." : "Start Part 1"}
+              {!starting && <ArrowRight className="h-4 w-4" />}
             </Button>
           </CardContent>
         </Card>

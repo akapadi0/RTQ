@@ -14,7 +14,7 @@ import type { PlannerXchangeApiRequestInit } from "@/plannerxchange";
 import type { Part1Answers, Part2Answers, CapacityInputs } from "@shared/answer-types";
 import { totalScore, scoreToTier } from "@shared/scoring";
 
-export type RtqStatus = "part1_complete" | "submitted" | "ips_ready";
+export type RtqStatus = "started" | "part1_complete" | "submitted" | "ips_ready";
 
 /**
  * Frozen at the moment of submission — score bands are explicitly provisional
@@ -78,14 +78,13 @@ async function requestJson<T>(path: string, init?: PlannerXchangeApiRequestInit)
   return response.json() as Promise<T>;
 }
 
-export async function createRtqResponse(input: { clientName: string; clientEmail: string; part1: Part1Answers }): Promise<RtqResponse> {
+export async function createRtqResponse(input: { clientName: string; clientEmail: string }): Promise<RtqResponse> {
   const context = getPlannerXchangeContext();
   const record: RtqResponse = {
     id: crypto.randomUUID(),
     clientName: input.clientName,
     clientEmail: input.clientEmail,
-    status: "part1_complete",
-    part1: input.part1,
+    status: "started",
     createdAt: new Date().toISOString(),
   };
 
@@ -140,6 +139,10 @@ async function patchPayload(id: string, patch: Partial<RtqResponse>): Promise<Rt
     body: JSON.stringify({ payload: next }),
   });
   return next;
+}
+
+export async function submitPart1(id: string, part1: Part1Answers): Promise<RtqResponse> {
+  return patchPayload(id, { part1, status: "part1_complete" });
 }
 
 export async function submitPart2(id: string, part2: Part2Answers): Promise<RtqResponse> {

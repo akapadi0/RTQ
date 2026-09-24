@@ -126,11 +126,12 @@ export default function AdvisorCapacity() {
       <div className="w-full max-w-xl mt-8 space-y-6">
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wide">Advisor only — not shown to clients</p>
-          <h1 className="text-2xl mt-1">Time Horizon & Client Specifics</h1>
+          <h1 className="text-2xl mt-1">Time Horizon & Background</h1>
           <p className="text-muted-foreground mt-1">
-            These come from you, not the client — name, career, and investable assets you already
-            know; capacity (ability to take risk) is meant to be an objective read on age, income
-            stability, and goal coverage, separate from the client's own reported comfort in Part 2.
+            Fill this in from what you already know — capacity (ability to take risk) is meant to be
+            an objective read on age, income stability, and goal coverage, separate from the reported
+            comfort captured in Part 2. This isn't a PlannerXchange client record; it's context this
+            app keeps for generating the IPS.
           </p>
         </div>
 
@@ -138,7 +139,7 @@ export default function AdvisorCapacity() {
           <CardContent className="p-8 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="age">Client age</Label>
+                <Label htmlFor="age">Age</Label>
                 <Input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)} />
               </div>
               <div className="space-y-1.5">

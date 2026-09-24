@@ -15,7 +15,7 @@ function AppRoutes() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/part1" component={Part1} />
+      <Route path="/part1/:id" component={Part1} />
       <Route path="/part2/:id" component={Part2} />
       <Route path="/results/:id" component={Results} />
       <Route path="/advisor" component={AdvisorList} />

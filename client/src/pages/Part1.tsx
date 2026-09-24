@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { Reorder, useDragControls } from "framer-motion";
 import { GripVertical, ChevronDown, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { LIFE_RISK_CATEGORIES, PART1_FREE_RESPONSE_PROMPTS, type LifeRiskCategoryId } from "@shared/rtq-content";
-import { createRtqResponse } from "@/lib/px-data";
+import { submitPart1 } from "@/lib/px-data";
 import { cn } from "@/lib/utils";
 
 const ALL_IDS = LIFE_RISK_CATEGORIES.map((c) => c.id);
@@ -85,6 +85,7 @@ function CategoryItem({
 }
 
 export default function Part1() {
+  const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const [categoryRank, setCategoryRank] = useState<LifeRiskCategoryId[]>(ALL_IDS);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -113,19 +114,13 @@ export default function Part1() {
     setSubmitting(true);
     setError(null);
     try {
-      const clientName = sessionStorage.getItem("rtq_client_name") ?? "";
-      const clientEmail = sessionStorage.getItem("rtq_client_email") ?? "";
-      const created = await createRtqResponse({
-        clientName,
-        clientEmail,
-        part1: {
-          categoryRank,
-          selectedConcerns,
-          freeText1: responses.freeText1 ?? "",
-          freeText2: responses.freeText2 ?? "",
-        },
+      await submitPart1(id, {
+        categoryRank,
+        selectedConcerns,
+        freeText1: responses.freeText1 ?? "",
+        freeText2: responses.freeText2 ?? "",
       });
-      navigate(`/part2/${created.id}`);
+      navigate(`/part2/${id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {

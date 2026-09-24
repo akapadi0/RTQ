@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "appRoot": "client",
+  "distRoot": "dist/public",
+  "workspacePackage": null,
+  "entryPoints": {
+    "src/plugin.tsx": {
+      "file": "assets/plugin-DogV3X7b.js",
+      "css": [
+        "assets/plugin-BgM7XKAA.css"
+      ]
+    }
+  }
+}
