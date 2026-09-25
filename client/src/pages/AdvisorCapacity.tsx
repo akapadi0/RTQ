@@ -6,7 +6,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChoiceButtons } from "@/components/rtq/ChoiceButtons";
 import type { CapacityInputs, CashNeedEntry } from "@shared/answer-types";
-import { CASH_NEED_ITEMS, TIMING_BUCKETS, type CashNeedItemId, type TimingBucket } from "@shared/rtq-content";
+import { CASH_NEED_ITEMS, TIMING_BUCKETS, TIME_HORIZON_BUCKETS, type CashNeedItemId, type TimingBucket, type TimeHorizonBucket } from "@shared/rtq-content";
 import { submitCapacity, generateAndDownloadIps, getRtqResponse } from "@/lib/api";
 import { scoreCapacity } from "@shared/scoring";
 import { cn } from "@/lib/utils";
@@ -40,12 +40,30 @@ export default function AdvisorCapacity() {
   const [saved, setSaved] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientHorizonBucket, setClientHorizonBucket] = useState<TimeHorizonBucket>();
 
   useEffect(() => {
     getRtqResponse(id)
       .then((r) => {
         setClientName(r.clientName);
         setClientEmail(r.clientEmail);
+        // Pre-fill from what the client already reported in Part 3 — still
+        // editable/overridable here before saving, same as everything else
+        // on this screen.
+        if (r.clientTimeHorizon) {
+          setClientHorizonBucket(r.clientTimeHorizon.horizonBucket);
+          const items = new Set<CashNeedItemId>(r.clientTimeHorizon.cashNeeds.map((c) => c.item));
+          if (items.size > 0) {
+            setCashItems(items);
+            const details: Record<string, { amount: string; pct: string; timing: TimingBucket | undefined }> = {};
+            for (const c of r.clientTimeHorizon.cashNeeds) {
+              details[c.item] = { amount: c.amount?.toString() ?? "", pct: c.pctOfPortfolio?.toString() ?? "", timing: c.timing };
+            }
+            setCashDetails(details);
+          } else {
+            setCashItems(new Set(["none"]));
+          }
+        }
       })
       .catch(() => undefined);
   }, [id]);
@@ -147,6 +165,13 @@ export default function AdvisorCapacity() {
             an objective read on age, income stability, and goal coverage, separate from the reported
             comfort captured in Part 2.
           </p>
+          {clientHorizonBucket && (
+            <p className="text-sm mt-2 rounded-md bg-muted/50 border border-border px-3 py-2">
+              <span className="text-muted-foreground">Client-reported time horizon: </span>
+              <span className="font-medium">{TIME_HORIZON_BUCKETS.find((b) => b.id === clientHorizonBucket)?.label}</span>
+              <span className="text-muted-foreground"> — cash needs below are pre-filled from Part 3, edit as needed.</span>
+            </p>
+          )}
         </div>
 
         <Card>

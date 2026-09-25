@@ -29,10 +29,10 @@ export default function Landing() {
                 Risk Tolerance <span className="text-sage">Questionnaire</span>
               </h1>
               <p className="text-muted-foreground">
-                Two short parts. Part 1 is about what's actually on your mind when you hear the word
+                Three short parts. Part 1 is about what's actually on your mind when you hear the word
                 "risk" — it's often not just the market. Part 2 is seven quick questions about how you
                 think about risk and money, including one about a downturn you actually lived through.
-                Takes about 10 minutes.
+                Part 3 is about when you'll actually need this money. Takes about 10 minutes.
               </p>
             </div>
 

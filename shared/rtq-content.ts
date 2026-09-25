@@ -209,3 +209,16 @@ export const TIMING_BUCKETS: { id: TimingBucket; label: string }[] = [
   { id: "1_2yrs", label: "1–2 yrs" },
   { id: "3_5yrs", label: "3–5 yrs" },
 ];
+
+// ─── Part 3 — client-reported time horizon (non-scoring) ───────────────────
+// Per Aditi (2026-09-25): client-facing, not scored — an input to the
+// advisor's own capacity/IPS work, same as near-term cash needs above.
+
+export type TimeHorizonBucket = "under_5yrs" | "5_15yrs" | "15_25yrs" | "25yrs_plus";
+
+export const TIME_HORIZON_BUCKETS: { id: TimeHorizonBucket; label: string }[] = [
+  { id: "under_5yrs", label: "Less than 5 years" },
+  { id: "5_15yrs", label: "5–15 years" },
+  { id: "15_25yrs", label: "15–25 years" },
+  { id: "25yrs_plus", label: "More than 25 years" },
+];

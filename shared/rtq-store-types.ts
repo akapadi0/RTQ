@@ -1,4 +1,4 @@
-import type { Part1Answers, Part2Answers, CapacityInputs } from "./answer-types";
+import type { Part1Answers, Part2Answers, CapacityInputs, ClientTimeHorizon } from "./answer-types";
 
 export type RtqStatus = "submitted" | "ips_ready";
 
@@ -23,6 +23,8 @@ export interface RtqResponse {
   status: RtqStatus;
   part1: Part1Answers;
   part2: Part2Answers;
+  /** Client-reported (Part 3) — the advisor's own capacity screen pre-fills its cash-needs section from this. */
+  clientTimeHorizon: ClientTimeHorizon;
   resultSnapshot: ResultSnapshot;
   capacityInputs?: CapacityInputs;
   advisorNotes?: string;

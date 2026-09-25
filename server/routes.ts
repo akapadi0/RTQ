@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction, type RequestHandler } from "express";
 import { z } from "zod";
-import { part1AnswersSchema, part2AnswersSchema, capacityInputsSchema } from "@shared/answer-types";
+import { part1AnswersSchema, part2AnswersSchema, clientTimeHorizonSchema, capacityInputsSchema } from "@shared/answer-types";
 import * as store from "./rtq-store";
 import { sendRtqReport, sendIpsEmail } from "./email";
 import { generateIpsPdf, ipsFileName } from "./pdf-generator";
@@ -34,6 +34,7 @@ router.post("/api/rtq", asyncHandler(async (req, res) => {
     clientEmail: z.string().email(),
     part1: part1AnswersSchema,
     part2: part2AnswersSchema,
+    clientTimeHorizon: clientTimeHorizonSchema,
   });
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });

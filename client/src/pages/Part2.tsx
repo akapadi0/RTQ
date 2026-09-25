@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PART2_QUESTIONS, type Part2Question } from "@shared/rtq-content";
 import type { Part2Answers } from "@shared/answer-types";
-import { createRtqResponse } from "@/lib/api";
-import { clearIntake, loadIntake, loadPart1, saveResult } from "@/lib/rtq-intake";
+import { loadIntake, loadPart1, savePart2 } from "@/lib/rtq-intake";
 import { cn } from "@/lib/utils";
 
 const TOTAL_QUESTIONS = PART2_QUESTIONS.length;
@@ -17,14 +16,12 @@ export default function Part2() {
 
   const [index, setIndex] = useState(0);
   const [points, setPoints] = useState<Partial<Record<keyof Part2Answers, number>>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loadIntake() || !loadPart1()) navigate("/");
   }, [navigate]);
 
-  async function selectAnswer(questionId: Part2Question["id"], value: number) {
+  function selectAnswer(questionId: Part2Question["id"], value: number) {
     const nextPoints = { ...points, [questionId]: value };
     setPoints(nextPoints);
 
@@ -33,34 +30,12 @@ export default function Part2() {
       return;
     }
 
-    // Last question — submit after the same brief highlight delay. This is
-    // the one and only server write for the whole client-facing flow: it
-    // creates the complete row (Part 1 + Part 2 + computed score) in a
-    // single append, and computes/freezes the score+tier and sends the
-    // results email (client + advisor) as part of this same request.
-    setTimeout(async () => {
-      setSubmitting(true);
-      setError(null);
-      try {
-        const intake = loadIntake();
-        const part1 = loadPart1();
-        if (!intake || !part1) {
-          navigate("/");
-          return;
-        }
-        const response = await createRtqResponse({
-          clientName: intake.clientName,
-          clientEmail: intake.clientEmail,
-          part1,
-          part2: nextPoints as Part2Answers,
-        });
-        saveResult(response);
-        clearIntake();
-        navigate(`/results/${response.id}`);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong.");
-        setSubmitting(false);
-      }
+    // Last question — hand off to Part 3 (time horizon) after the same
+    // brief highlight delay. The actual server submission happens once, at
+    // the end of Part 3.
+    setTimeout(() => {
+      savePart2(nextPoints as Part2Answers);
+      navigate("/part3");
     }, 260);
   }
 
@@ -69,8 +44,8 @@ export default function Part2() {
   return (
     <div className="min-h-screen p-6 flex flex-col items-center">
       <div className="w-full max-w-xl pt-8 space-y-1">
-        <Progress value={((index + 1) / TOTAL_QUESTIONS) * 100} />
-        <p className="text-xs text-muted-foreground">Question {index + 1} of {TOTAL_QUESTIONS}</p>
+        <Progress value={33 + ((index + 1) / TOTAL_QUESTIONS) * 33} />
+        <p className="text-xs text-muted-foreground">Part 2 of 3 — Question {index + 1} of {TOTAL_QUESTIONS}</p>
       </div>
 
       <div className="w-full max-w-xl mt-10">
@@ -93,7 +68,6 @@ export default function Part2() {
                         type="button"
                         key={opt.label}
                         onClick={() => selectAnswer(question.id, opt.points)}
-                        disabled={submitting}
                         className={cn(
                           "w-full text-left rounded-xl border px-5 py-3.5 text-sm transition-colors",
                           selected ? "border-primary bg-primary text-primary-foreground font-medium" : "border-border hover:border-primary/40 hover:bg-muted/50"
@@ -104,14 +78,12 @@ export default function Part2() {
                     );
                   })}
                 </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                {submitting && <p className="text-sm text-muted-foreground">Submitting...</p>}
               </CardContent>
             </Card>
           </motion.div>
         </AnimatePresence>
 
-        {index > 0 && !submitting && (
+        {index > 0 && (
           <button type="button" onClick={() => setIndex((i) => i - 1)} className="mt-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </button>

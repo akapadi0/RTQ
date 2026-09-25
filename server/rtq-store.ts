@@ -23,7 +23,7 @@
 import ExcelJS from "exceljs";
 import { readFileBufferByPath, writeFileBufferToParent, ensureChildFolder, listChildren } from "./graph-service";
 import type { RtqResponse, ResultSnapshot } from "@shared/rtq-store-types";
-import type { Part1Answers, Part2Answers, CapacityInputs } from "@shared/answer-types";
+import type { Part1Answers, Part2Answers, ClientTimeHorizon, CapacityInputs } from "@shared/answer-types";
 import { categoryLabel, predictedActualGap, cashNeedsRollup, scoreCapacity } from "@shared/scoring";
 
 const RECORDS_SUBFOLDER = "records";
@@ -72,6 +72,7 @@ export async function createRtqResponse(input: {
   clientEmail: string;
   part1: Part1Answers;
   part2: Part2Answers;
+  clientTimeHorizon: ClientTimeHorizon;
   resultSnapshot: ResultSnapshot;
 }): Promise<RtqResponse> {
   const now = new Date().toISOString();
@@ -84,6 +85,7 @@ export async function createRtqResponse(input: {
     submittedAt: now,
     part1: input.part1,
     part2: input.part2,
+    clientTimeHorizon: input.clientTimeHorizon,
     resultSnapshot: input.resultSnapshot,
   };
   await writeRecord(response);

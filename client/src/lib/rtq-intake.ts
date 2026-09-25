@@ -1,13 +1,14 @@
-import type { Part1Answers } from "@shared/answer-types";
+import type { Part1Answers, Part2Answers } from "@shared/answer-types";
 import type { RtqResponse } from "@shared/rtq-store-types";
 
 /**
- * Carries the client's answers across Landing -> Part 1 -> Part 2 in
- * sessionStorage, so the server only sees one combined write at the end of
- * Part 2 instead of a create-then-patch sequence a few seconds apart.
+ * Carries the client's answers across Landing -> Part 1 -> Part 2 -> Part 3
+ * in sessionStorage, so the server only sees one combined write at the end
+ * of Part 3 instead of a create-then-patch sequence a few seconds apart.
  */
 const INTAKE_KEY = "rtq:intake";
 const PART1_KEY = "rtq:part1";
+const PART2_KEY = "rtq:part2";
 
 export interface RtqIntake {
   clientName: string;
@@ -32,9 +33,19 @@ export function loadPart1(): Part1Answers | undefined {
   return raw ? (JSON.parse(raw) as Part1Answers) : undefined;
 }
 
+export function savePart2(part2: Part2Answers): void {
+  sessionStorage.setItem(PART2_KEY, JSON.stringify(part2));
+}
+
+export function loadPart2(): Part2Answers | undefined {
+  const raw = sessionStorage.getItem(PART2_KEY);
+  return raw ? (JSON.parse(raw) as Part2Answers) : undefined;
+}
+
 export function clearIntake(): void {
   sessionStorage.removeItem(INTAKE_KEY);
   sessionStorage.removeItem(PART1_KEY);
+  sessionStorage.removeItem(PART2_KEY);
 }
 
 // Results.tsx reads this first so the client's own results page never has to

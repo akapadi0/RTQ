@@ -1,4 +1,4 @@
-import type { Part1Answers, Part2Answers, CapacityInputs } from "@shared/answer-types";
+import type { Part1Answers, Part2Answers, ClientTimeHorizon, CapacityInputs } from "@shared/answer-types";
 import type { RtqResponse } from "@shared/rtq-store-types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -13,12 +13,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** Single combined submission — Part 1 and Part 2 answers are carried in the browser and posted together. */
+/** Single combined submission — Part 1, Part 2, and Part 3 answers are carried in the browser and posted together. */
 export async function createRtqResponse(input: {
   clientName: string;
   clientEmail: string;
   part1: Part1Answers;
   part2: Part2Answers;
+  clientTimeHorizon: ClientTimeHorizon;
 }): Promise<RtqResponse> {
   return request("/api/rtq", { method: "POST", body: JSON.stringify(input) });
 }

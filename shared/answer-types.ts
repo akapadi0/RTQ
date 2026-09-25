@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { LifeRiskCategoryId, CashNeedItemId, TimingBucket } from "./rtq-content";
+import type { LifeRiskCategoryId, CashNeedItemId, TimingBucket, TimeHorizonBucket } from "./rtq-content";
 
 export const part1AnswersSchema = z.object({
   /** index 0 = rank 1 (most weighs on client). Independent of selectedConcerns. */
@@ -30,6 +30,18 @@ export const part2AnswersSchema = z.object({
   q7: z.number(),
 });
 export type Part2Answers = z.infer<typeof part2AnswersSchema>;
+
+/**
+ * Part 3 — client-reported, non-scoring. Per Aditi (2026-09-25): clients
+ * should complete time horizon and near-term cash needs themselves, same
+ * shape as the cash-needs entries the advisor separately confirms in
+ * CapacityInputs below (the advisor's capacity screen pre-fills from this).
+ */
+export const clientTimeHorizonSchema = z.object({
+  horizonBucket: z.custom<TimeHorizonBucket>(),
+  cashNeeds: z.array(cashNeedEntrySchema).default([]),
+});
+export type ClientTimeHorizon = z.infer<typeof clientTimeHorizonSchema>;
 
 /**
  * Advisor-entered — the "Time Horizon & Client Specifics" step, filled in

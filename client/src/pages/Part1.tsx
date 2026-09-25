@@ -124,8 +124,8 @@ export default function Part1() {
   return (
     <div className="min-h-screen p-6 flex flex-col items-center">
       <div className="w-full max-w-2xl pt-8 space-y-1">
-        <Progress value={33} />
-        <p className="text-xs text-muted-foreground">Part 1 of 2 — What's on your mind</p>
+        <Progress value={22} />
+        <p className="text-xs text-muted-foreground">Part 1 of 3 — What's on your mind</p>
       </div>
 
       <div className="w-full max-w-2xl mt-8 space-y-6">
