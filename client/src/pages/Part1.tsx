@@ -87,7 +87,7 @@ function CategoryItem({
 export default function Part1() {
   const [, navigate] = useLocation();
   const [categoryRank, setCategoryRank] = useState<LifeRiskCategoryId[]>(ALL_IDS);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(ALL_IDS));
   const [selectedConcerns, setSelectedConcerns] = useState<Record<string, string[]>>({});
   const [responses, setResponses] = useState<Record<string, string>>({});
 
