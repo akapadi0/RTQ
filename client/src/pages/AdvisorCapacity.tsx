@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChoiceButtons } from "@/components/rtq/ChoiceButtons";
+import { CashNeedsEditor } from "@/components/rtq/CashNeedsEditor";
 import type { CapacityInputs, CashNeedEntry } from "@shared/answer-types";
-import { CASH_NEED_ITEMS, TIMING_BUCKETS, type CashNeedItemId, type TimingBucket } from "@shared/rtq-content";
 import { submitCapacity, generateAndDownloadIps, getRtqResponse } from "@/lib/api";
 import { scoreCapacity } from "@shared/scoring";
-import { cn } from "@/lib/utils";
 
 const INCOME_STABILITY_OPTIONS: { value: CapacityInputs["incomeStability"]; label: string }[] = [
   { value: "stable_employment", label: "Stable employment" },
@@ -34,13 +33,15 @@ export default function AdvisorCapacity() {
   const [investableAssets, setInvestableAssets] = useState("");
   const [incomeStability, setIncomeStability] = useState<CapacityInputs["incomeStability"]>();
   const [goalCoverage, setGoalCoverage] = useState<CapacityInputs["goalCoverage"]>();
-  const [cashItems, setCashItems] = useState<Set<CashNeedItemId>>(new Set());
-  const [cashDetails, setCashDetails] = useState<Record<string, { amount: string; pct: string; timing: TimingBucket | undefined; description: string }>>({});
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [clientReportedCashNeeds, setClientReportedCashNeeds] = useState(false);
+
+  const [responseLoaded, setResponseLoaded] = useState(false);
+  const [initialCashNeeds, setInitialCashNeeds] = useState<CashNeedEntry[]>([]);
+  const [cashNeeds, setCashNeeds] = useState<CashNeedEntry[]>([]);
+  const [cashNeedsReady, setCashNeedsReady] = useState(true);
 
   useEffect(() => {
     getRtqResponse(id)
@@ -50,27 +51,13 @@ export default function AdvisorCapacity() {
         // Pre-fill from what the client already reported in Part 3 — still
         // editable/overridable here before saving, same as everything else
         // on this screen.
-        if (r.clientTimeHorizon) {
-          const items = new Set<CashNeedItemId>(r.clientTimeHorizon.cashNeeds.map((c) => c.item));
-          if (items.size > 0) {
-            setClientReportedCashNeeds(true);
-            setCashItems(items);
-            const details: Record<string, { amount: string; pct: string; timing: TimingBucket | undefined; description: string }> = {};
-            for (const c of r.clientTimeHorizon.cashNeeds) {
-              details[c.item] = { amount: c.amount?.toString() ?? "", pct: c.pctOfPortfolio?.toString() ?? "", timing: c.timing, description: c.description ?? "" };
-            }
-            setCashDetails(details);
-          } else {
-            setCashItems(new Set(["none"]));
-          }
-        }
+        setInitialCashNeeds(r.clientTimeHorizon?.cashNeeds ?? []);
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setResponseLoaded(true));
   }, [id]);
 
   const ready = age && incomeStability && goalCoverage;
-  const selectedCashItems = Array.from(cashItems).filter((i) => i !== "none");
-  const cashDetailsComplete = selectedCashItems.every((i) => cashDetails[i]?.timing);
 
   const livePreview = ready
     ? scoreCapacity({
@@ -80,41 +67,17 @@ export default function AdvisorCapacity() {
         investableAssets: investableAssets ? Number(investableAssets) : undefined,
         incomeStability: incomeStability!,
         goalCoverage: goalCoverage!,
-        cashNeeds: selectedCashItems
-          .filter((i) => cashDetails[i]?.timing)
-          .map((item) => ({
-            item,
-            amount: cashDetails[item]?.amount ? Number(cashDetails[item].amount) : undefined,
-            pctOfPortfolio: cashDetails[item]?.pct ? Number(cashDetails[item].pct) : undefined,
-            timing: cashDetails[item]!.timing!,
-          })),
+        cashNeeds,
         notes: "",
       })
     : null;
 
-  function toggleCashItem(itemId: CashNeedItemId) {
-    setCashItems((prev) => {
-      const next = new Set(prev);
-      if (itemId === "none") return next.has("none") ? new Set() : new Set(["none"]);
-      next.delete("none");
-      next.has(itemId) ? next.delete(itemId) : next.add(itemId);
-      return next;
-    });
-  }
-
   async function save() {
     setError(null);
-    if (selectedCashItems.length > 0 && !cashDetailsComplete) {
+    if (!cashNeedsReady) {
       setError("Add a timing for each near-term cash need before saving.");
       return;
     }
-    const cashNeeds: CashNeedEntry[] = selectedCashItems.map((item) => ({
-      item,
-      description: item === "other" ? cashDetails[item]?.description || undefined : undefined,
-      amount: cashDetails[item]?.amount ? Number(cashDetails[item].amount) : undefined,
-      pctOfPortfolio: cashDetails[item]?.pct ? Number(cashDetails[item].pct) : undefined,
-      timing: cashDetails[item]!.timing!,
-    }));
     try {
       await submitCapacity(
         id,
@@ -166,7 +129,7 @@ export default function AdvisorCapacity() {
             an objective read on age, income stability, and goal coverage, separate from the reported
             comfort captured in Part 2.
           </p>
-          {clientReportedCashNeeds && (
+          {initialCashNeeds.length > 0 && (
             <p className="text-sm mt-2 rounded-md bg-muted/50 border border-border px-3 py-2 text-muted-foreground">
               Cash needs below are pre-filled from what the client reported in Part 3 — edit as needed.
             </p>
@@ -209,92 +172,15 @@ export default function AdvisorCapacity() {
 
             <div className="space-y-3 border-t border-border pt-6">
               <Label>Near-term cash needs (1–3 years) — does the client expect to need money from their investments for any of these?</Label>
-              <div className="flex flex-wrap gap-2">
-                {CASH_NEED_ITEMS.map((item) => {
-                  const selected = cashItems.has(item.id);
-                  return (
-                    <button
-                      type="button"
-                      key={item.id}
-                      onClick={() => toggleCashItem(item.id)}
-                      className={cn(
-                        "rounded-full border px-3.5 py-2 text-sm transition-colors",
-                        selected ? "border-accent bg-accent text-accent-foreground font-medium" : "border-border hover:border-accent/40"
-                      )}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {selectedCashItems.length > 0 && (
-                <div className="space-y-4 pt-2">
-                  <p className="text-xs text-muted-foreground -mb-1">
-                    Enter whichever you actually know — a dollar amount, a rough % of portfolio, or both. Neither
-                    requires investable assets to be filled in above.
-                  </p>
-                  {selectedCashItems.map((item) => {
-                    const label = CASH_NEED_ITEMS.find((c) => c.id === item)!.label;
-                    const detail = cashDetails[item] ?? { amount: "", pct: "", timing: undefined, description: "" };
-                    return (
-                      <div key={item} className="space-y-2 border-t border-border pt-3 first:border-t-0 first:pt-0">
-                        <p className="font-medium text-sm">{label}</p>
-                        {item === "other" && (
-                          <div className="space-y-1.5">
-                            <Label htmlFor="other-description-advisor">What is it?</Label>
-                            <Textarea
-                              id="other-description-advisor"
-                              placeholder="Briefly describe the expense"
-                              value={detail.description}
-                              onChange={(e) => setCashDetails((prev) => ({ ...prev, [item]: { ...detail, description: e.target.value } }))}
-                            />
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <Label htmlFor={`amt-${item}`}>Approx. amount</Label>
-                            <Input
-                              id={`amt-${item}`}
-                              type="number"
-                              min={0}
-                              placeholder="$"
-                              value={detail.amount}
-                              onChange={(e) => setCashDetails((prev) => ({ ...prev, [item]: { ...detail, amount: e.target.value } }))}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label htmlFor={`pct-${item}`}>or % of portfolio</Label>
-                            <Input
-                              id={`pct-${item}`}
-                              type="number"
-                              min={0}
-                              max={100}
-                              placeholder="%"
-                              value={detail.pct}
-                              onChange={(e) => setCashDetails((prev) => ({ ...prev, [item]: { ...detail, pct: e.target.value } }))}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-1.5">
-                          {TIMING_BUCKETS.map((t) => (
-                            <button
-                              type="button"
-                              key={t.id}
-                              onClick={() => setCashDetails((prev) => ({ ...prev, [item]: { ...detail, timing: t.id } }))}
-                              className={cn(
-                                "flex-1 rounded-md border px-2 py-2.5 text-xs font-medium transition-colors",
-                                detail.timing === t.id ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted/50"
-                              )}
-                            >
-                              {t.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              {responseLoaded && (
+                <CashNeedsEditor
+                  initialCashNeeds={initialCashNeeds}
+                  idPrefix="advisor-"
+                  onChange={(entries, isReady) => {
+                    setCashNeeds(entries);
+                    setCashNeedsReady(isReady);
+                  }}
+                />
               )}
             </div>
 

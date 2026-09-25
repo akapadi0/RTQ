@@ -18,7 +18,7 @@
 import type { Part1Answers, Part2Answers, ClientTimeHorizon } from "@shared/answer-types";
 import type { ResultSnapshot } from "@shared/rtq-store-types";
 import { PART2_QUESTIONS, CASH_NEED_ITEMS, TIMING_BUCKETS } from "@shared/rtq-content";
-import { categoryLabel, concernLabel, predictedActualGap } from "@shared/scoring";
+import { categoryLabel, concernLabel, predictedActualGap, totalScore, toDisplayScore } from "@shared/scoring";
 
 const ADVISOR_EMAIL = process.env.ADVISOR_EMAIL || "aditi@wealthiqco.com";
 
@@ -106,15 +106,20 @@ function part1FullHtml(part1: Part1Answers): string {
   `;
 }
 
+/** Shows the actual arithmetic behind the final score — per Aditi (2026-09-25), not just the answers but how they add up to it. */
 function part2FullHtml(part2: Part2Answers): string {
   const rows = PART2_QUESTIONS.map((q) => {
     const value = part2[q.id];
     const label = q.options.find((o) => o.points === value)?.label ?? `${value} pts`;
-    return `<li><strong>${q.prompt}</strong><br/>${label}</li>`;
+    return `<li><strong>${q.prompt}</strong><br/>${label} — <strong>${value} pts</strong></li>`;
   }).join("");
+  const raw = totalScore(part2);
+  const display = toDisplayScore(raw);
   return `
     <h3>Part 2 — Answers</h3>
     <ol style="padding-left: 20px; margin: 4px 0 16px;">${rows}</ol>
+    <p><strong>Raw point total:</strong> ${raw} (sum of the 7 point values above)<br/>
+       <strong>Rescaled score:</strong> ${display}/100 — this is the number reported everywhere else.</p>
   `;
 }
 
