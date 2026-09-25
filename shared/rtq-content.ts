@@ -67,10 +67,9 @@ export const LIFE_RISK_CATEGORIES: LifeRiskCategory[] = [
     label: "Behavioral",
     concerns: [
       { id: "panic-selling", label: "Panic-selling" },
-      { id: "lifestyle-creep", label: "Lifestyle creep" },
       { id: "not-saving-enough", label: "Not saving enough" },
       { id: "procrastinating", label: "Procrastinating on financial planning" },
-      { id: "family-misalignment", label: "Lack of alignment within the family" },
+      { id: "family-misalignment", label: "Lack of alignment within the family on how to spend" },
       { id: "lifestyle-funding-gap", label: "Not having enough money to fund my lifestyle" },
     ],
   },
