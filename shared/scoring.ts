@@ -8,15 +8,17 @@
  * what each one's raw point range happens to be. SCORE_BANDS is defined
  * directly on that 1–100 scale, which also puts it on the same footing as
  * the capacity score (already 0–100) for divergence comparisons.
- * Deterministic, no LLM in this path. The band cutoffs are explicitly
- * placeholders — the spec calls for real submissions to inform a
- * recalibration, so they're a plain config array, not inlined if/else, and
- * are the first thing expected to change.
+ * Deterministic, no LLM in this path.
+ *
+ * Band cutoffs and labels match Aditi's existing "Risk Tolerance Categories"
+ * configuration in RightCapital exactly (5 equal 20-point bands) — per Aditi
+ * (2026-09-25), a client's tier here should match the tier the same score
+ * would land in over there.
  */
 import type { Part1Answers, Part2Answers, CashNeedEntry, CapacityInputs } from "./answer-types";
 import { PART2_QUESTIONS, LIFE_RISK_CATEGORIES, type TimingBucket } from "./rtq-content";
 
-export type RiskTier = "preservation" | "conservative" | "stability" | "growth" | "aggressive" | "opportunity";
+export type RiskTier = "conservative" | "moderately_conservative" | "moderate" | "moderately_aggressive" | "aggressive";
 
 export interface ScoreBand {
   tier: RiskTier;
@@ -28,14 +30,13 @@ export interface ScoreBand {
   max: number;
 }
 
-/** Provisional equal-width bands (1–100) — recalibrate after the first 20–30 real submissions cluster. */
+/** Matches RightCapital's Risk Tolerance Categories (1–100, 5 equal 20-point bands) — see comment above. */
 export const SCORE_BANDS: ScoreBand[] = [
-  { tier: "preservation", label: "Preservation", description: "Protecting what you have comes first, even if it means growth stays modest.", allocationNarrative: "Capital preservation, income-focused", min: 1, max: 17 },
-  { tier: "conservative", label: "Conservative", description: "You're open to some growth, but only with a light touch of risk.", allocationNarrative: "Conservative, income-tilted with modest growth", min: 18, max: 34 },
-  { tier: "stability", label: "Stability", description: "You want steady progress and can tolerate some ups and downs to get it.", allocationNarrative: "Balanced, stability-focused", min: 35, max: 50 },
-  { tier: "growth", label: "Growth", description: "You're comfortable riding out volatility in pursuit of stronger long-term growth.", allocationNarrative: "Growth-oriented, moderate volatility", min: 51, max: 67 },
-  { tier: "aggressive", label: "Aggressive", description: "You're focused on maximizing growth and can handle significant swings.", allocationNarrative: "Aggressive growth, higher volatility", min: 68, max: 84 },
-  { tier: "opportunity", label: "Opportunity", description: "You actively welcome volatility as part of pursuing the highest growth potential.", allocationNarrative: "Opportunity-seeking, maximum growth", min: 85, max: 100 },
+  { tier: "conservative", label: "Conservative", description: "Protecting what you have comes first, even if it means growth stays modest.", allocationNarrative: "Capital preservation, income-focused", min: 1, max: 20 },
+  { tier: "moderately_conservative", label: "Moderately Conservative", description: "You're open to some growth, but only with a light touch of risk.", allocationNarrative: "Conservative, income-tilted with modest growth", min: 21, max: 40 },
+  { tier: "moderate", label: "Moderate", description: "You want steady progress and can tolerate some ups and downs to get it.", allocationNarrative: "Balanced, stability-focused", min: 41, max: 60 },
+  { tier: "moderately_aggressive", label: "Moderately Aggressive", description: "You're comfortable riding out volatility in pursuit of stronger long-term growth.", allocationNarrative: "Growth-oriented, moderate volatility", min: 61, max: 80 },
+  { tier: "aggressive", label: "Aggressive", description: "You're focused on maximizing growth and can handle significant swings.", allocationNarrative: "Aggressive growth, higher volatility", min: 81, max: 100 },
 ];
 
 const RAW_SCORE_MIN = 7;
@@ -190,12 +191,9 @@ function liquidityPenalty(inputs: CapacityInputs): number {
   return Math.min(MAX_LIQUIDITY_PENALTY, rollup.pctOfAssets * weight * 0.6);
 }
 
+/** Reuses the RTQ's own tier labels/bands (both 1-100 scales) so capacity and the RTQ tier read on the same vocabulary in the IPS. */
 function scoreToCapacityTier(score: number): { label: string } {
-  // Reuse the six RTQ tier labels on a 0-100 scale so capacity and the RTQ
-  // tier read on the same vocabulary in the IPS, even though they're computed
-  // on different scales (0-100 vs. the 7-104 point-sum).
-  const idx = Math.min(5, Math.floor(Math.max(0, Math.min(100, score)) / (100 / 6)));
-  return { label: SCORE_BANDS[idx].label };
+  return { label: scoreToTier(score).label };
 }
 
 export interface CapacityScore {
@@ -227,7 +225,7 @@ export function scoreCapacity(inputs: CapacityInputs): CapacityScore {
 
 /** Flags a meaningful gap between capacity tier and the RTQ's own tier (band index distance ≥ 2). */
 export function computeDivergence(capacityScore: number, rtqTotalScore: number) {
-  const capacityIdx = Math.min(5, Math.floor(Math.max(0, Math.min(100, capacityScore)) / (100 / 6)));
+  const capacityIdx = SCORE_BANDS.findIndex((b) => b.tier === scoreToTier(capacityScore).tier);
   const rtqIdx = SCORE_BANDS.findIndex((b) => b.tier === scoreToTier(rtqTotalScore).tier);
   const gap = capacityIdx - rtqIdx;
   return {
