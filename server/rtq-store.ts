@@ -136,7 +136,7 @@ const COLUMNS = [
   { header: "Created", key: "createdAt", width: 20 },
   { header: "Submitted", key: "submittedAt", width: 20 },
   { header: "IPS Generated", key: "ipsGeneratedAt", width: 20 },
-  { header: "RTQ Score (/104)", key: "riskScore", width: 16 },
+  { header: "RTQ Score (/100)", key: "riskScore", width: 16 },
   { header: "Risk Tier", key: "riskTier", width: 14 },
   { header: "Ability (Initial)", key: "abilityInitial", width: 16 },
   { header: "Ability (Adjusted)", key: "abilityAdjusted", width: 18 },

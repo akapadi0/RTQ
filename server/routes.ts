@@ -4,7 +4,7 @@ import { part1AnswersSchema, part2AnswersSchema, capacityInputsSchema } from "@s
 import * as store from "./rtq-store";
 import { sendRtqReport, sendIpsEmail } from "./email";
 import { generateIpsPdf, ipsFileName } from "./pdf-generator";
-import { totalScore, scoreToTier } from "@shared/scoring";
+import { scoreOutOf100, scoreToTier } from "@shared/scoring";
 import { writeFileBufferToParent, ensureChildFolder } from "./graph-service";
 
 export const router = Router();
@@ -38,7 +38,7 @@ router.post("/api/rtq", asyncHandler(async (req, res) => {
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const score = totalScore(parsed.data.part2);
+  const score = scoreOutOf100(parsed.data.part2);
   const band = scoreToTier(score);
   const resultSnapshot = {
     score,

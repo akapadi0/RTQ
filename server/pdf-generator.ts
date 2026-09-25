@@ -91,7 +91,7 @@ export async function generateIpsPdf(response: RtqResponse): Promise<Buffer> {
     capacity.liquidityPenalty > 0
       ? `Adjusted ability score: ${capacity.adjustedScore}/100 (${capacity.tier.label}) — reduced ${capacity.liquidityPenalty} pts for the near-term liquidity needs above.`
       : `Adjusted ability score: ${capacity.adjustedScore}/100 (${capacity.tier.label}) — no adjustment; no near-term liquidity needs flagged.`,
-    `Desire to take risk (RTQ result): ${tierLabel} — score ${score}/104. ${tierDescription}`,
+    `Desire to take risk (RTQ result): ${tierLabel} — score ${score}/100. ${tierDescription}`,
     divergence.flagged
       ? `Capacity and desire diverge meaningfully (${divergence.direction === "capacity_exceeds_desire" ? "capacity exceeds desire" : "desire exceeds capacity"}) — flagged for a deeper conversation about markets and time horizon before finalizing allocation.`
       : "Capacity and desire are broadly aligned.",
@@ -127,7 +127,7 @@ export async function generateIpsPdf(response: RtqResponse): Promise<Buffer> {
   bullets(doc, [
     "Risk scoring in this IPS is produced by deterministic, rules-based logic — a 7-question point-sum mapped to a fixed set of score bands, with capacity additionally adjusted for near-term liquidity needs. No AI model makes or influences the risk-tolerance or suitability determination at runtime.",
     "AI tooling (Claude) was used only to help build and draft this application's code and document templates — the same 'administrative and drafting support' category described in the firm's AI policy reference materials (see Two Trails AI Tools Data Handling Policy / ADV Disclosure Language templates on file), not to perform investment analysis or suitability determination.",
-    `Capacity: initial ${capacity.initialScore}/100 (${capacity.initialTier.label}) → adjusted ${capacity.adjustedScore}/100 (${capacity.tier.label}). RTQ score: ${score}/104 (${tierLabel}).`,
+    `Capacity: initial ${capacity.initialScore}/100 (${capacity.initialTier.label}) → adjusted ${capacity.adjustedScore}/100 (${capacity.tier.label}). RTQ score: ${score}/100 (${tierLabel}).`,
     "Score bands are provisional — recalibrate after the first 20–30 real submissions cluster.",
     "[Advisor / compliance: review this section and the firm's own ADV Item 4 / Item 8 language before treating this IPS as exam-ready — do not file without that review.]",
   ]);

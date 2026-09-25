@@ -90,7 +90,7 @@ function part1Html(part1: Part1Answers): string {
 function tierHtml(snapshot: ResultSnapshot): string {
   return `
     <h3>Risk profile</h3>
-    <p><strong>${snapshot.tierLabel}</strong> (score ${snapshot.score}/104) — ${snapshot.tierDescription}</p>
+    <p><strong>${snapshot.tierLabel}</strong> (score ${snapshot.score}/100) — ${snapshot.tierDescription}</p>
   `;
 }
 

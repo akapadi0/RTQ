@@ -1,11 +1,17 @@
 /**
  * Scoring — per "Wealth IQ RTQ — Build Spec" (Aditi, 2026-09-24).
  *
- * Part 2 is a 7-question point-sum instrument (range 7–104) mapped to one of
- * six tiers via SCORE_BANDS. Deterministic, no LLM in this path. The band
- * cutoffs are explicitly placeholders — the spec calls for real submissions
- * to inform a recalibration, so they're a plain config array, not inlined
- * if/else, and are the first thing expected to change.
+ * Part 2 is a 7-question point-sum instrument. The raw point sum (range
+ * 7–104, an artifact of each question's own point scale) is rescaled to a
+ * 1–100 display score — per Aditi (2026-09-25), the client-facing number
+ * should read as "out of 100" regardless of how many questions feed it or
+ * what each one's raw point range happens to be. SCORE_BANDS is defined
+ * directly on that 1–100 scale, which also puts it on the same footing as
+ * the capacity score (already 0–100) for divergence comparisons.
+ * Deterministic, no LLM in this path. The band cutoffs are explicitly
+ * placeholders — the spec calls for real submissions to inform a
+ * recalibration, so they're a plain config array, not inlined if/else, and
+ * are the first thing expected to change.
  */
 import type { Part1Answers, Part2Answers, CashNeedEntry, CapacityInputs } from "./answer-types";
 import { PART2_QUESTIONS, LIFE_RISK_CATEGORIES, type TimingBucket } from "./rtq-content";
@@ -22,20 +28,36 @@ export interface ScoreBand {
   max: number;
 }
 
-/** Provisional equal-width bands — recalibrate after the first 20–30 real submissions cluster. */
+/** Provisional equal-width bands (1–100) — recalibrate after the first 20–30 real submissions cluster. */
 export const SCORE_BANDS: ScoreBand[] = [
-  { tier: "preservation", label: "Preservation", description: "Protecting what you have comes first, even if it means growth stays modest.", allocationNarrative: "Capital preservation, income-focused", min: 7, max: 23 },
-  { tier: "conservative", label: "Conservative", description: "You're open to some growth, but only with a light touch of risk.", allocationNarrative: "Conservative, income-tilted with modest growth", min: 24, max: 40 },
-  { tier: "stability", label: "Stability", description: "You want steady progress and can tolerate some ups and downs to get it.", allocationNarrative: "Balanced, stability-focused", min: 41, max: 57 },
-  { tier: "growth", label: "Growth", description: "You're comfortable riding out volatility in pursuit of stronger long-term growth.", allocationNarrative: "Growth-oriented, moderate volatility", min: 58, max: 74 },
-  { tier: "aggressive", label: "Aggressive", description: "You're focused on maximizing growth and can handle significant swings.", allocationNarrative: "Aggressive growth, higher volatility", min: 75, max: 91 },
-  { tier: "opportunity", label: "Opportunity", description: "You actively welcome volatility as part of pursuing the highest growth potential.", allocationNarrative: "Opportunity-seeking, maximum growth", min: 92, max: 104 },
+  { tier: "preservation", label: "Preservation", description: "Protecting what you have comes first, even if it means growth stays modest.", allocationNarrative: "Capital preservation, income-focused", min: 1, max: 17 },
+  { tier: "conservative", label: "Conservative", description: "You're open to some growth, but only with a light touch of risk.", allocationNarrative: "Conservative, income-tilted with modest growth", min: 18, max: 34 },
+  { tier: "stability", label: "Stability", description: "You want steady progress and can tolerate some ups and downs to get it.", allocationNarrative: "Balanced, stability-focused", min: 35, max: 50 },
+  { tier: "growth", label: "Growth", description: "You're comfortable riding out volatility in pursuit of stronger long-term growth.", allocationNarrative: "Growth-oriented, moderate volatility", min: 51, max: 67 },
+  { tier: "aggressive", label: "Aggressive", description: "You're focused on maximizing growth and can handle significant swings.", allocationNarrative: "Aggressive growth, higher volatility", min: 68, max: 84 },
+  { tier: "opportunity", label: "Opportunity", description: "You actively welcome volatility as part of pursuing the highest growth potential.", allocationNarrative: "Opportunity-seeking, maximum growth", min: 85, max: 100 },
 ];
 
+const RAW_SCORE_MIN = 7;
+const RAW_SCORE_MAX = 104;
+
+/** Raw point sum (7–104) — an intermediate value, not shown to anyone. Use scoreOutOf100 for the number people actually see. */
 export function totalScore(answers: Part2Answers): number {
   return answers.q1 + answers.q2 + answers.q3 + answers.q4 + answers.q5 + answers.q6 + answers.q7;
 }
 
+/** Rescales the raw 7–104 point sum to a 1–100 display score. */
+export function toDisplayScore(rawScore: number): number {
+  const normalized = (rawScore - RAW_SCORE_MIN) / (RAW_SCORE_MAX - RAW_SCORE_MIN);
+  return Math.round(1 + normalized * 99);
+}
+
+/** The single number to store/display/report — 1–100, already rescaled from Part 2's raw point sum. */
+export function scoreOutOf100(answers: Part2Answers): number {
+  return toDisplayScore(totalScore(answers));
+}
+
+/** Expects a 1–100 score (see scoreOutOf100/toDisplayScore), not the raw point sum. */
 export function scoreToTier(score: number): ScoreBand {
   const band = SCORE_BANDS.find((b) => score >= b.min && score <= b.max);
   if (band) return band;
