@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { getRtqResponse, type RtqResponse } from "@/lib/px-data";
+import { getRtqResponse } from "@/lib/api";
+import { loadResult } from "@/lib/rtq-intake";
+import type { RtqResponse } from "@shared/rtq-store-types";
 import { categoryLabel, concernLabel } from "@shared/scoring";
 
 // Client-facing — per spec, the two non-scoring flags (predicted-vs-actual
@@ -13,7 +15,18 @@ export default function Results() {
   const [response, setResponse] = useState<RtqResponse | null | undefined>(undefined);
 
   useEffect(() => {
-    getRtqResponse(id).then((r) => setResponse(r ?? null));
+    // Prefer the copy handed back from the create call — checking straight
+    // back with OneDrive right after that same write is the exact gap this
+    // whole flow is designed to avoid. Only hit the network (e.g. a page
+    // refresh, or a link opened later) as a fallback.
+    const cached = loadResult(id);
+    if (cached) {
+      setResponse(cached);
+      return;
+    }
+    getRtqResponse(id)
+      .then(setResponse)
+      .catch(() => setResponse(null));
   }, [id]);
 
   if (response === undefined) {

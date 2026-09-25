@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { Reorder, useDragControls } from "framer-motion";
 import { GripVertical, ChevronDown, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { LIFE_RISK_CATEGORIES, PART1_FREE_RESPONSE_PROMPTS, type LifeRiskCategoryId } from "@shared/rtq-content";
-import { submitPart1 } from "@/lib/px-data";
+import { loadIntake, savePart1 } from "@/lib/rtq-intake";
 import { cn } from "@/lib/utils";
 
 const ALL_IDS = LIFE_RISK_CATEGORIES.map((c) => c.id);
@@ -85,14 +85,15 @@ function CategoryItem({
 }
 
 export default function Part1() {
-  const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const [categoryRank, setCategoryRank] = useState<LifeRiskCategoryId[]>(ALL_IDS);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selectedConcerns, setSelectedConcerns] = useState<Record<string, string[]>>({});
   const [responses, setResponses] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loadIntake()) navigate("/");
+  }, [navigate]);
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -110,22 +111,14 @@ export default function Part1() {
     });
   }
 
-  async function submit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await submitPart1(id, {
-        categoryRank,
-        selectedConcerns,
-        freeText1: responses.freeText1 ?? "",
-        freeText2: responses.freeText2 ?? "",
-      });
-      navigate(`/part2/${id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setSubmitting(false);
-    }
+  function submit() {
+    savePart1({
+      categoryRank,
+      selectedConcerns,
+      freeText1: responses.freeText1 ?? "",
+      freeText2: responses.freeText2 ?? "",
+    });
+    navigate("/part2");
   }
 
   return (
@@ -174,10 +167,9 @@ export default function Part1() {
               </div>
             ))}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button size="lg" className="w-full gap-2" onClick={submit} disabled={submitting}>
-              {submitting ? "Saving..." : "Continue to Part 2"}
-              {!submitting && <ArrowRight className="h-4 w-4" />}
+            <Button size="lg" className="w-full gap-2" onClick={submit}>
+              Continue to Part 2
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </CardContent>
         </Card>

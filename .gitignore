@@ -1,6 +1,7 @@
 node_modules
 *.log
+.env
 
-# dist/ IS committed — PlannerXchange requires the built distRoot output
-# (including plannerxchange.publish.json and plannerxchange.build-provenance.json)
-# in the repo so it can bind hosted artifacts to the reviewed source commit.
+# Standalone deploy (Vercel) — built fresh on every deploy, not committed.
+dist
+api

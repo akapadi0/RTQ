@@ -1,25 +1,28 @@
-import { useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PART2_QUESTIONS, type Part2Question } from "@shared/rtq-content";
 import type { Part2Answers } from "@shared/answer-types";
-import { submitPart2 as submitPart2Data } from "@/lib/px-data";
-import { sendRtqReport } from "@/lib/rtq-email";
+import { createRtqResponse } from "@/lib/api";
+import { clearIntake, loadIntake, loadPart1, saveResult } from "@/lib/rtq-intake";
 import { cn } from "@/lib/utils";
 
 const TOTAL_QUESTIONS = PART2_QUESTIONS.length;
 
 export default function Part2() {
-  const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
 
   const [index, setIndex] = useState(0);
   const [points, setPoints] = useState<Partial<Record<keyof Part2Answers, number>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loadIntake() || !loadPart1()) navigate("/");
+  }, [navigate]);
 
   async function selectAnswer(questionId: Part2Question["id"], value: number) {
     const nextPoints = { ...points, [questionId]: value };
@@ -30,20 +33,30 @@ export default function Part2() {
       return;
     }
 
-    // Last question — submit after the same brief highlight delay.
+    // Last question — submit after the same brief highlight delay. This is
+    // the one and only server write for the whole client-facing flow: it
+    // creates the complete row (Part 1 + Part 2 + computed score) in a
+    // single append, and computes/freezes the score+tier and sends the
+    // results email (client + advisor) as part of this same request.
     setTimeout(async () => {
       setSubmitting(true);
       setError(null);
       try {
-        const updated = await submitPart2Data(id, nextPoints as Part2Answers);
-        await sendRtqReport({
-          clientName: updated.clientName,
-          clientEmail: updated.clientEmail,
-          part1: updated.part1!,
-          part2: updated.part2!,
-          resultSnapshot: updated.resultSnapshot!,
+        const intake = loadIntake();
+        const part1 = loadPart1();
+        if (!intake || !part1) {
+          navigate("/");
+          return;
+        }
+        const response = await createRtqResponse({
+          clientName: intake.clientName,
+          clientEmail: intake.clientEmail,
+          part1,
+          part2: nextPoints as Part2Answers,
         });
-        navigate(`/results/${id}`);
+        saveResult(response);
+        clearIntake();
+        navigate(`/results/${response.id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong.");
         setSubmitting(false);

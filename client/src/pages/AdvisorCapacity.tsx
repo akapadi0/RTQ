@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ChoiceButtons } from "@/components/rtq/ChoiceButtons";
 import type { CapacityInputs, CashNeedEntry } from "@shared/answer-types";
 import { CASH_NEED_ITEMS, TIMING_BUCKETS, type CashNeedItemId, type TimingBucket } from "@shared/rtq-content";
-import { setCapacityInputs, getRtqResponse } from "@/lib/px-data";
-import { generateIps } from "@/lib/ips-generator";
+import { submitCapacity, generateAndDownloadIps, getRtqResponse } from "@/lib/api";
 import { scoreCapacity } from "@shared/scoring";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +26,8 @@ const GOAL_COVERAGE_OPTIONS: { value: CapacityInputs["goalCoverage"]; label: str
 
 export default function AdvisorCapacity() {
   const { id } = useParams<{ id: string }>();
+  const [clientName, setClientName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
   const [age, setAge] = useState("");
   const [targetRetirementAge, setTargetRetirementAge] = useState("");
   const [career, setCareer] = useState("");
@@ -39,6 +40,15 @@ export default function AdvisorCapacity() {
   const [saved, setSaved] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getRtqResponse(id)
+      .then((r) => {
+        setClientName(r.clientName);
+        setClientEmail(r.clientEmail);
+      })
+      .catch(() => undefined);
+  }, [id]);
 
   const ready = age && incomeStability && goalCoverage;
   const selectedCashItems = Array.from(cashItems).filter((i) => i !== "none");
@@ -87,7 +97,7 @@ export default function AdvisorCapacity() {
       timing: cashDetails[item]!.timing!,
     }));
     try {
-      await setCapacityInputs(
+      await submitCapacity(
         id,
         {
           age: Number(age),
@@ -111,9 +121,9 @@ export default function AdvisorCapacity() {
     setError(null);
     setGenerating(true);
     try {
-      const response = await getRtqResponse(id);
-      if (!response) throw new Error("Could not find this RTQ response.");
-      await generateIps(response);
+      // Server generates the PDF, emails it (client + advisor), and saves a
+      // copy to the OneDrive Suitability folder — this just also downloads it.
+      await generateAndDownloadIps(id, clientName);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to generate IPS.");
     } finally {
@@ -127,11 +137,15 @@ export default function AdvisorCapacity() {
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wide">Advisor only — not shown to clients</p>
           <h1 className="text-2xl mt-1">Time Horizon & Background</h1>
+          {clientName && (
+            <p className="text-sm font-medium mt-1">
+              {clientName} <span className="text-muted-foreground font-normal">— {clientEmail}</span>
+            </p>
+          )}
           <p className="text-muted-foreground mt-1">
             Fill this in from what you already know — capacity (ability to take risk) is meant to be
             an objective read on age, income stability, and goal coverage, separate from the reported
-            comfort captured in Part 2. This isn't a PlannerXchange client record; it's context this
-            app keeps for generating the IPS.
+            comfort captured in Part 2.
           </p>
         </div>
 
@@ -277,7 +291,7 @@ export default function AdvisorCapacity() {
               </Button>
             ) : (
               <Button size="lg" variant="accent" className="w-full" onClick={downloadIps} disabled={generating}>
-                {generating ? "Generating..." : "Download IPS (.pptx)"}
+                {generating ? "Generating..." : "Download IPS (.pdf)"}
               </Button>
             )}
           </CardContent>

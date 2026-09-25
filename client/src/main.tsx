@@ -1,5 +1,5 @@
-// Standalone preview entry — not used by the PlannerXchange shell (see plugin.tsx)
-import { mount } from "./plugin";
-import { mockRuntimeContext } from "./dev-context";
+import { createRoot } from "react-dom/client";
+import App from "./App";
+import "./index.css";
 
-mount(mockRuntimeContext);
+createRoot(document.getElementById("root")!).render(<App />);
