@@ -6,7 +6,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChoiceButtons } from "@/components/rtq/ChoiceButtons";
 import type { CapacityInputs, CashNeedEntry } from "@shared/answer-types";
-import { CASH_NEED_ITEMS, TIMING_BUCKETS, TIME_HORIZON_BUCKETS, type CashNeedItemId, type TimingBucket, type TimeHorizonBucket } from "@shared/rtq-content";
+import { CASH_NEED_ITEMS, TIMING_BUCKETS, type CashNeedItemId, type TimingBucket } from "@shared/rtq-content";
 import { submitCapacity, generateAndDownloadIps, getRtqResponse } from "@/lib/api";
 import { scoreCapacity } from "@shared/scoring";
 import { cn } from "@/lib/utils";
@@ -35,12 +35,12 @@ export default function AdvisorCapacity() {
   const [incomeStability, setIncomeStability] = useState<CapacityInputs["incomeStability"]>();
   const [goalCoverage, setGoalCoverage] = useState<CapacityInputs["goalCoverage"]>();
   const [cashItems, setCashItems] = useState<Set<CashNeedItemId>>(new Set());
-  const [cashDetails, setCashDetails] = useState<Record<string, { amount: string; pct: string; timing: TimingBucket | undefined }>>({});
+  const [cashDetails, setCashDetails] = useState<Record<string, { amount: string; pct: string; timing: TimingBucket | undefined; description: string }>>({});
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [clientHorizonBucket, setClientHorizonBucket] = useState<TimeHorizonBucket>();
+  const [clientReportedCashNeeds, setClientReportedCashNeeds] = useState(false);
 
   useEffect(() => {
     getRtqResponse(id)
@@ -51,13 +51,13 @@ export default function AdvisorCapacity() {
         // editable/overridable here before saving, same as everything else
         // on this screen.
         if (r.clientTimeHorizon) {
-          setClientHorizonBucket(r.clientTimeHorizon.horizonBucket);
           const items = new Set<CashNeedItemId>(r.clientTimeHorizon.cashNeeds.map((c) => c.item));
           if (items.size > 0) {
+            setClientReportedCashNeeds(true);
             setCashItems(items);
-            const details: Record<string, { amount: string; pct: string; timing: TimingBucket | undefined }> = {};
+            const details: Record<string, { amount: string; pct: string; timing: TimingBucket | undefined; description: string }> = {};
             for (const c of r.clientTimeHorizon.cashNeeds) {
-              details[c.item] = { amount: c.amount?.toString() ?? "", pct: c.pctOfPortfolio?.toString() ?? "", timing: c.timing };
+              details[c.item] = { amount: c.amount?.toString() ?? "", pct: c.pctOfPortfolio?.toString() ?? "", timing: c.timing, description: c.description ?? "" };
             }
             setCashDetails(details);
           } else {
@@ -110,6 +110,7 @@ export default function AdvisorCapacity() {
     }
     const cashNeeds: CashNeedEntry[] = selectedCashItems.map((item) => ({
       item,
+      description: item === "other" ? cashDetails[item]?.description || undefined : undefined,
       amount: cashDetails[item]?.amount ? Number(cashDetails[item].amount) : undefined,
       pctOfPortfolio: cashDetails[item]?.pct ? Number(cashDetails[item].pct) : undefined,
       timing: cashDetails[item]!.timing!,
@@ -165,11 +166,9 @@ export default function AdvisorCapacity() {
             an objective read on age, income stability, and goal coverage, separate from the reported
             comfort captured in Part 2.
           </p>
-          {clientHorizonBucket && (
-            <p className="text-sm mt-2 rounded-md bg-muted/50 border border-border px-3 py-2">
-              <span className="text-muted-foreground">Client-reported time horizon: </span>
-              <span className="font-medium">{TIME_HORIZON_BUCKETS.find((b) => b.id === clientHorizonBucket)?.label}</span>
-              <span className="text-muted-foreground"> — cash needs below are pre-filled from Part 3, edit as needed.</span>
+          {clientReportedCashNeeds && (
+            <p className="text-sm mt-2 rounded-md bg-muted/50 border border-border px-3 py-2 text-muted-foreground">
+              Cash needs below are pre-filled from what the client reported in Part 3 — edit as needed.
             </p>
           )}
         </div>
@@ -209,7 +208,7 @@ export default function AdvisorCapacity() {
             </div>
 
             <div className="space-y-3 border-t border-border pt-6">
-              <Label>Near-term cash needs (3–5 yrs) — does the client expect to need money from their investments for any of these?</Label>
+              <Label>Near-term cash needs (1–3 years) — does the client expect to need money from their investments for any of these?</Label>
               <div className="flex flex-wrap gap-2">
                 {CASH_NEED_ITEMS.map((item) => {
                   const selected = cashItems.has(item.id);
@@ -237,10 +236,21 @@ export default function AdvisorCapacity() {
                   </p>
                   {selectedCashItems.map((item) => {
                     const label = CASH_NEED_ITEMS.find((c) => c.id === item)!.label;
-                    const detail = cashDetails[item] ?? { amount: "", pct: "", timing: undefined };
+                    const detail = cashDetails[item] ?? { amount: "", pct: "", timing: undefined, description: "" };
                     return (
                       <div key={item} className="space-y-2 border-t border-border pt-3 first:border-t-0 first:pt-0">
                         <p className="font-medium text-sm">{label}</p>
+                        {item === "other" && (
+                          <div className="space-y-1.5">
+                            <Label htmlFor="other-description-advisor">What is it?</Label>
+                            <Textarea
+                              id="other-description-advisor"
+                              placeholder="Briefly describe the expense"
+                              value={detail.description}
+                              onChange={(e) => setCashDetails((prev) => ({ ...prev, [item]: { ...detail, description: e.target.value } }))}
+                            />
+                          </div>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
                             <Label htmlFor={`amt-${item}`}>Approx. amount</Label>

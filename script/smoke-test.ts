@@ -14,7 +14,7 @@ async function main() {
       freeText2: "",
     },
     part2: { q1: 9, q2: 8, q3: 8, q4: 8, q5: 8, q6: 8, q7: 8 },
-    clientTimeHorizon: { horizonBucket: "15_25yrs", cashNeeds: [] },
+    clientTimeHorizon: { cashNeeds: [] },
     resultSnapshot: { score: 57, tierLabel: "Stability", tierDescription: "Balanced.", allocationNarrative: "Balanced allocation.", computedAt: new Date().toISOString() },
   });
   console.log("   created id:", created.id, "| status:", created.status);

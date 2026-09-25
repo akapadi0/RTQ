@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { LifeRiskCategoryId, CashNeedItemId, TimingBucket, TimeHorizonBucket } from "./rtq-content";
+import type { LifeRiskCategoryId, CashNeedItemId, TimingBucket } from "./rtq-content";
 
 export const part1AnswersSchema = z.object({
   /** index 0 = rank 1 (most weighs on client). Independent of selectedConcerns. */
@@ -13,6 +13,8 @@ export type Part1Answers = z.infer<typeof part1AnswersSchema>;
 
 const cashNeedEntrySchema = z.object({
   item: z.custom<CashNeedItemId>(),
+  /** Free-text description — only meaningful (and shown) for item "other", to cover a need not in the preset list. */
+  description: z.string().max(300).optional(),
   /** Either works, per spec: "Approx. amount or % of portfolio." Advisor enters whichever they actually know — a dollar figure needs investable assets to convert to %, but a direct % doesn't. */
   amount: z.number().min(0).optional(),
   pctOfPortfolio: z.number().min(0).max(100).optional(),
@@ -32,13 +34,12 @@ export const part2AnswersSchema = z.object({
 export type Part2Answers = z.infer<typeof part2AnswersSchema>;
 
 /**
- * Part 3 — client-reported, non-scoring. Per Aditi (2026-09-25): clients
- * should complete time horizon and near-term cash needs themselves, same
- * shape as the cash-needs entries the advisor separately confirms in
- * CapacityInputs below (the advisor's capacity screen pre-fills from this).
+ * Part 3 — client-reported, non-scoring near-term (1-3 yr) cash needs. Per
+ * Aditi (2026-09-25): clients should complete this themselves, same shape as
+ * the cash-needs entries the advisor separately confirms in CapacityInputs
+ * below (the advisor's capacity screen pre-fills from this).
  */
 export const clientTimeHorizonSchema = z.object({
-  horizonBucket: z.custom<TimeHorizonBucket>(),
   cashNeeds: z.array(cashNeedEntrySchema).default([]),
 });
 export type ClientTimeHorizon = z.infer<typeof clientTimeHorizonSchema>;

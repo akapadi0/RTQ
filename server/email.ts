@@ -15,8 +15,9 @@
  * email, and both get the final IPS + PDF, matching Money Mindset's
  * dual-recipient pattern.
  */
-import type { Part1Answers, Part2Answers } from "@shared/answer-types";
+import type { Part1Answers, Part2Answers, ClientTimeHorizon } from "@shared/answer-types";
 import type { ResultSnapshot } from "@shared/rtq-store-types";
+import { PART2_QUESTIONS, CASH_NEED_ITEMS, TIMING_BUCKETS } from "@shared/rtq-content";
 import { categoryLabel, concernLabel, predictedActualGap } from "@shared/scoring";
 
 const ADVISOR_EMAIL = process.env.ADVISOR_EMAIL || "aditi@wealthiqco.com";
@@ -87,6 +88,59 @@ function part1Html(part1: Part1Answers): string {
   `;
 }
 
+// ─── Advisor-only, full-detail sections — per Aditi (2026-09-25): the
+// advisor copy should show every answer, not just a summary.
+
+function part1FullHtml(part1: Part1Answers): string {
+  const rows = part1.categoryRank
+    .map((cat, i) => {
+      const concerns = part1.selectedConcerns[cat]?.map((c) => concernLabel(cat, c)).join(", ") || "";
+      return `<li><strong>#${i + 1}:</strong> ${categoryLabel(cat)}${concerns ? ` — ${concerns}` : ""}</li>`;
+    })
+    .join("");
+  return `
+    <h3>Part 1 — What's weighing on them (ranked)</h3>
+    <ol style="padding-left: 20px; margin: 4px 0;">${rows}</ol>
+    ${part1.freeText1 ? `<p><strong>Financial history context:</strong> ${part1.freeText1}</p>` : ""}
+    ${part1.freeText2 ? `<p><strong>Anything else:</strong> ${part1.freeText2}</p>` : ""}
+  `;
+}
+
+function part2FullHtml(part2: Part2Answers): string {
+  const rows = PART2_QUESTIONS.map((q) => {
+    const value = part2[q.id];
+    const label = q.options.find((o) => o.points === value)?.label ?? `${value} pts`;
+    return `<li><strong>${q.prompt}</strong><br/>${label}</li>`;
+  }).join("");
+  return `
+    <h3>Part 2 — Answers</h3>
+    <ol style="padding-left: 20px; margin: 4px 0 16px;">${rows}</ol>
+  `;
+}
+
+function cashNeedsHtml(clientTimeHorizon: ClientTimeHorizon): string {
+  if (clientTimeHorizon.cashNeeds.length === 0) {
+    return `<h3>Part 3 — Near-term cash needs (1–3 yrs)</h3><p><em>None reported.</em></p>`;
+  }
+  const rows = clientTimeHorizon.cashNeeds
+    .map((c) => {
+      const label = CASH_NEED_ITEMS.find((i) => i.id === c.item)?.label ?? c.item;
+      const timing = TIMING_BUCKETS.find((t) => t.id === c.timing)?.label ?? c.timing;
+      const parts = [
+        c.description ? `"${c.description}"` : null,
+        c.amount ? `~$${c.amount.toLocaleString()}` : null,
+        c.pctOfPortfolio ? `~${c.pctOfPortfolio}% of portfolio` : null,
+        timing,
+      ].filter(Boolean);
+      return `<li><strong>${label}</strong> — ${parts.join(", ")}</li>`;
+    })
+    .join("");
+  return `
+    <h3>Part 3 — Near-term cash needs (1–3 yrs)</h3>
+    <ul style="padding-left: 20px; margin: 4px 0 16px;">${rows}</ul>
+  `;
+}
+
 function tierHtml(snapshot: ResultSnapshot): string {
   return `
     <h3>Risk profile</h3>
@@ -108,10 +162,13 @@ export async function sendRtqReport(opts: {
   clientEmail: string;
   part1: Part1Answers;
   part2: Part2Answers;
+  clientTimeHorizon: ClientTimeHorizon;
   resultSnapshot: ResultSnapshot;
 }) {
   const subject = `Risk Tolerance Questionnaire results — ${opts.clientName}`;
 
+  // Client copy stays a lean summary — per Aditi (2026-09-24), the full
+  // back-and-forth belongs in the in-person follow-up, not a data dump.
   const clientHtml = wrap(
     opts.clientName,
     `
@@ -124,13 +181,14 @@ export async function sendRtqReport(opts: {
     `
   );
 
-  // Advisor copy adds the predicted-vs-actual gap flag — advisor-facing
-  // only, never shown to the client. Near-term cash needs isn't in this
-  // email: it's entered later by the advisor, so there's nothing to report
-  // yet at submit-time — it surfaces in the IPS once that's filled in.
+  // Advisor copy shows every answer — per Aditi (2026-09-25) — plus the
+  // predicted-vs-actual gap flag, advisor-facing only.
   const gap = predictedActualGap(opts.part2);
   const flagsHtml = gap.message ? `<p><strong>Predicted-vs-actual gap:</strong> ${gap.message}</p>` : "<p><em>No flags raised.</em></p>";
-  const advisorHtml = wrap(opts.clientName, `${part1Html(opts.part1)}${tierHtml(opts.resultSnapshot)}${flagsHtml}`);
+  const advisorHtml = wrap(
+    opts.clientName,
+    `${part1FullHtml(opts.part1)}${part2FullHtml(opts.part2)}${cashNeedsHtml(opts.clientTimeHorizon)}${tierHtml(opts.resultSnapshot)}${flagsHtml}`
+  );
 
   await sendEmail(opts.clientEmail, subject, clientHtml);
   await sendEmail(ADVISOR_EMAIL, `${subject} (advisor copy)`, advisorHtml);

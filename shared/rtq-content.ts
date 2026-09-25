@@ -188,6 +188,7 @@ export type CashNeedItemId =
   | "business_investment"
   | "education"
   | "family_medical"
+  | "sabbatical"
   | "other"
   | "none";
 
@@ -198,6 +199,7 @@ export const CASH_NEED_ITEMS: { id: CashNeedItemId; label: string; exclusive?: b
   { id: "business_investment", label: "Business investment/start-up capital" },
   { id: "education", label: "Education costs" },
   { id: "family_medical", label: "Family/medical obligation" },
+  { id: "sabbatical", label: "Planned sabbatical or career break" },
   { id: "other", label: "Other one-time expense" },
   { id: "none", label: "None of these", exclusive: true },
 ];
@@ -208,17 +210,4 @@ export const TIMING_BUCKETS: { id: TimingBucket; label: string }[] = [
   { id: "under_1yr", label: "<1 yr" },
   { id: "1_2yrs", label: "1–2 yrs" },
   { id: "3_5yrs", label: "3–5 yrs" },
-];
-
-// ─── Part 3 — client-reported time horizon (non-scoring) ───────────────────
-// Per Aditi (2026-09-25): client-facing, not scored — an input to the
-// advisor's own capacity/IPS work, same as near-term cash needs above.
-
-export type TimeHorizonBucket = "under_5yrs" | "5_15yrs" | "15_25yrs" | "25yrs_plus";
-
-export const TIME_HORIZON_BUCKETS: { id: TimeHorizonBucket; label: string }[] = [
-  { id: "under_5yrs", label: "Less than 5 years" },
-  { id: "5_15yrs", label: "5–15 years" },
-  { id: "15_25yrs", label: "15–25 years" },
-  { id: "25yrs_plus", label: "More than 25 years" },
 ];

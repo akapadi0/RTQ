@@ -55,6 +55,7 @@ router.post("/api/rtq", asyncHandler(async (req, res) => {
     clientEmail: row.clientEmail,
     part1: row.part1,
     part2: row.part2,
+    clientTimeHorizon: row.clientTimeHorizon,
     resultSnapshot: row.resultSnapshot,
   });
   res.json(row);
